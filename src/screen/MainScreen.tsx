@@ -54,8 +54,8 @@ const TodoButtonText = styled.Text`
 `
 
 const TodoView = styled.View`
-  background-color: #1e90ff;
-  border-radius: 6px;
+  border: 1px solid #1e90ff;
+  border-radius: 5px;
   margin-bottom: 12px;
 
   flex-direction: row;
@@ -64,8 +64,9 @@ const TodoView = styled.View`
 
 const TodoText = styled.Text`
   color: black;
-  font-size: 16px;
-  font-weight: 800;
+  padding-left: 10px;
+  font-size: 14px;
+  font-weight: 700;
   flex: 1;
 `
 
@@ -108,7 +109,7 @@ const MainScreen: React.FC = () => {
       return null
     }
 
-    const newItem: TodoItem = { id: 1 + 1, title: todo }
+    const newItem: TodoItem = { id: todoList.length + 1, title: todo }
     setTodoList([...todoList, newItem])
     setTodo('')
   }
