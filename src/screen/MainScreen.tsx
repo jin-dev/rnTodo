@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   FlatList,
   Text,
@@ -10,15 +10,97 @@ import {
   View,
 } from 'react-native'
 
+import * as LocalAuthentication from 'expo-local-authentication'
+import styled from 'styled-components/native'
+
 interface TodoItem {
   id: number
   title: string
 }
+const TODOFlat = styled.FlatList`
+  width: 100%;
+  padding: 10px;
+`
+
+const Container = styled.View`
+  margin-top: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+`
+const TODOInput = styled.TextInput`
+  width: 80%;
+  margin: 10px;
+  border-width: 2px;
+  border-color: #000;
+  height: 30px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+`
+
+const TodoButton = styled.TouchableOpacity`
+  background-color: #000;
+  border-radius: 6px;
+  width: 80%;
+  align-items: center;
+  margin-bottom: 40px;
+`
+
+const TodoButtonText = styled.Text`
+  color: #fff;
+  font-weight: bold;
+  font-size: 20px;
+`
+
+const TodoView = styled.View`
+  background-color: #1e90ff;
+  border-radius: 6px;
+  margin-bottom: 12px;
+
+  flex-direction: row;
+  align-items: center;
+`
+
+const TodoText = styled.Text`
+  color: black;
+  font-size: 16px;
+  font-weight: 800;
+  flex: 1;
+`
 
 const MainScreen: React.FC = () => {
   const [todo, setTodo] = useState<string>('')
   const [todoList, setTodoList] = useState<TodoItem[]>([])
   const [modifyTodo, setModifyTodo] = useState<TodoItem | null>(null)
+
+  const [flag, setFlag] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  async function checkHardware() {
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync()
+      console.log('The compatible', compatible)
+      setFlag(compatible)
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  useEffect(() => {
+    void checkHardware()
+  }, [])
+
+  function onAuthenticate() {
+    const auth = LocalAuthentication.authenticateAsync({
+      promptMessage: 'Authenticate',
+      fallbackLabel: 'Enter Password',
+    })
+    void auth.then((result) => {
+      setIsAuthenticated(result.success)
+      //console.log(result)
+    })
+  }
 
   //insertion
   const addTodo = () => {
@@ -57,37 +139,35 @@ const MainScreen: React.FC = () => {
     setTodoList(filterTodoList)
   }
 
-  const displayTodos = ({ item, index }: { item: TodoItem; index: number }) => {
+  const displayTodos = ({ item }: { item: TodoItem }) => {
     return (
-      <View>
-        <Text>{item?.title}</Text>
+      <TodoView>
+        <TodoText>{item?.title}</TodoText>
 
         <Button title="edit" onPress={() => editTodo(item)} />
         <Button title="delete" onPress={() => delTodo(item?.id)} />
-      </View>
+      </TodoView>
     )
   }
 
   return (
-    <View style={{}}>
-      <TextInput
-        style={{}}
-        placeholder="Type your comment"
+    <Container>
+      <TODOInput
+        placeholder="Type your comment11"
         value={todo}
-        onChangeText={(input) => setTodo(input)}
+        onChangeText={(input: string) => setTodo(input)}
       />
       {modifyTodo ? (
-        <TouchableOpacity style={{}} onPress={() => updateTodo()}>
-          <Text style={{}}>SAVE</Text>
-        </TouchableOpacity>
+        <TodoButton onPress={() => updateTodo()}>
+          <TodoButtonText>SAVE</TodoButtonText>
+        </TodoButton>
       ) : (
-        <TouchableOpacity style={{}} onPress={() => addTodo()}>
-          <Text style={{}}>ADD</Text>
-        </TouchableOpacity>
+        <TodoButton onPress={() => addTodo()}>
+          <TodoButtonText>ADD</TodoButtonText>
+        </TodoButton>
       )}
-      <Text>Main Screen haha</Text>
-      <FlatList data={todoList} renderItem={displayTodos} />
-    </View>
+      <TODOFlat data={todoList} renderItem={displayTodos} />
+    </Container>
   )
 }
 
