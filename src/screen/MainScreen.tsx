@@ -93,29 +93,45 @@ const MainScreen: React.FC = () => {
     void checkHardware()
   }, [])
 
-  function onAuthenticate() {
+  function onAuthenticate(): Promise<boolean> {
     const auth = LocalAuthentication.authenticateAsync({
       promptMessage: 'Authenticate',
       fallbackLabel: 'Enter Password',
     })
-    void auth.then((result) => {
-      setIsAuthenticated(result.success)
-      //console.log(result)
-    })
+    return auth
+      .then((result) => {
+        return result?.success || false
+      })
+      .catch((e) => {
+        console.log(e)
+        return false
+      })
   }
 
   //insertion
   const addTodo = () => {
-    if (todo === '') {
-      return null
-    }
-
-    const newItem: TodoItem = {
-      id: parseInt(Date.now().toString(), 10),
-      title: todo,
-    }
-    setTodoList([...todoList, newItem])
-    setTodo('')
+    onAuthenticate()
+      .then((result) => {
+        console.log(result)
+        if (result) {
+          console.log('Authentication successful')
+          // Proceed with adding the todo here
+          if (todo === '') {
+            return null
+          }
+          const newItem: TodoItem = {
+            id: parseInt(Date.now().toString(), 10),
+            title: todo,
+          }
+          setTodoList([...todoList, newItem])
+          setTodo('')
+        } else {
+          console.log('Authentication failed')
+        }
+      })
+      .catch((error) => {
+        console.error('Authentication error:', error)
+      })
   }
 
   const editTodo = (todo: TodoItem) => {
