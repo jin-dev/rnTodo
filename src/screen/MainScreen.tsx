@@ -42,9 +42,10 @@ const TODOInput = styled.TextInput`
 const TodoButton = styled.TouchableOpacity`
   background-color: #000;
   border-radius: 6px;
-  width: 80%;
+  width: 60%;
   align-items: center;
   margin-bottom: 40px;
+  padding: 10px;
 `
 
 const TodoButtonText = styled.Text`
@@ -109,7 +110,10 @@ const MainScreen: React.FC = () => {
       return null
     }
 
-    const newItem: TodoItem = { id: todoList.length + 1, title: todo }
+    const newItem: TodoItem = {
+      id: parseInt(Date.now().toString(), 10),
+      title: todo,
+    }
     setTodoList([...todoList, newItem])
     setTodo('')
   }
@@ -164,7 +168,7 @@ const MainScreen: React.FC = () => {
         </TodoButton>
       ) : (
         <TodoButton onPress={() => addTodo()}>
-          <TodoButtonText>ADD</TodoButtonText>
+          <TodoButtonText>ADD1</TodoButtonText>
         </TodoButton>
       )}
       <TODOFlat data={todoList} renderItem={displayTodos} />
