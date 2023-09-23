@@ -45,7 +45,7 @@ const TodoView = styled.View`
   border: 1px solid #1e90ff;
   border-radius: 5px;
   margin-bottom: 12px;
-
+  width: 380px;
   flex-direction: row;
   align-items: center;
 `
