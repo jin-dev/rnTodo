@@ -1,27 +1,14 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState } from 'react'
-import {
-  FlatList,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Button,
-  View,
-} from 'react-native'
-
-import * as LocalAuthentication from 'expo-local-authentication'
+import { Button, FlatList } from 'react-native'
+import { onAuthenticate, checkHardware } from '../components/utility/expoAuth'
 import styled from 'styled-components/native'
+import { TodoItem, TodoState } from '../type/types'
 
-interface TodoItem {
-  id: number
-  title: string
-}
-const TODOFlat = styled.FlatList`
-  width: 100%;
-  padding: 10px;
-`
-
+// css with styled-components
 const Container = styled.View`
   margin-top: 50px;
   display: flex;
@@ -72,122 +59,118 @@ const TodoText = styled.Text`
 `
 
 const MainScreen: React.FC = () => {
-  const [todo, setTodo] = useState<string>('')
-  const [todoList, setTodoList] = useState<TodoItem[]>([])
-  const [modifyTodo, setModifyTodo] = useState<TodoItem | null>(null)
-
-  const [flag, setFlag] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  async function checkHardware() {
-    try {
-      const compatible = await LocalAuthentication.hasHardwareAsync()
-      console.log('The compatible', compatible)
-      setFlag(compatible)
-    } catch (e) {
-      console.log(e)
-    }
-  }
+  // State to manage the TODO data
+  const [todoState, setTodoState] = useState<TodoState>({
+    todo: '', // input for new TODO item
+    todoList: [], //List of TODO items
+    modifyTodo: null, // The item being edited
+  })
 
   useEffect(() => {
+    // Check hardware capabilities when the component mounts
     void checkHardware()
   }, [])
 
-  function onAuthenticate(): Promise<boolean> {
-    const auth = LocalAuthentication.authenticateAsync({
-      promptMessage: 'Authenticate',
-      fallbackLabel: 'Enter Password',
+  //Fuction to handle user authentication(PIN code)
+  //user must have PIN code before using this app
+  const handleAuthentication = async () => {
+    try {
+      const result = await onAuthenticate()
+      return result
+    } catch (error) {
+      console.error('Authentication error:', error)
+      return false
+    }
+  }
+
+  //add a new TODO item
+  const addTodo = async () => {
+    const isAuthenticated = await handleAuthentication()
+    if (!isAuthenticated || todoState.todo === '') {
+      console.log('Authentication failed or empty todo')
+      return
+    }
+
+    //Create a new item and update the state
+    const newItem: TodoItem = {
+      id: parseInt(Date.now().toString(), 10),
+      title: todoState.todo,
+    }
+    setTodoState({
+      ...todoState,
+      todoList: [...todoState.todoList, newItem],
+      todo: '', //Clear the input
     })
-    return auth
-      .then((result) => {
-        return result?.success || false
-      })
-      .catch((e) => {
-        console.log(e)
-        return false
-      })
   }
 
-  //insertion
-  const addTodo = () => {
-    onAuthenticate()
-      .then((result) => {
-        console.log(result)
-        if (result) {
-          console.log('Authentication successful')
-          // Proceed with adding the todo here
-          if (todo === '') {
-            return null
-          }
-          const newItem: TodoItem = {
-            id: parseInt(Date.now().toString(), 10),
-            title: todo,
-          }
-          setTodoList([...todoList, newItem])
-          setTodo('')
-        } else {
-          console.log('Authentication failed')
-        }
-      })
-      .catch((error) => {
-        console.error('Authentication error:', error)
-      })
+  //Function to edit a item
+  const editTodo = async (todo: TodoItem) => {
+    const isAuthenticated = await handleAuthentication()
+    if (isAuthenticated) {
+      setTodoState({ ...todoState, modifyTodo: todo, todo: todo?.title || '' })
+    }
   }
 
-  const editTodo = (todo: TodoItem) => {
-    setModifyTodo(todo)
-    setTodo(todo?.title || '')
-  }
-
+  //Function to update an edited item
   const updateTodo = () => {
-    const updatedTodoList = todoList.map((item) => {
-      const tempId = modifyTodo?.id || null
+    const updatedTodoList = todoState.todoList.map((item) => {
+      const tempId = todoState.modifyTodo?.id || null
 
-      if (modifyTodo && item.id === tempId) {
-        return { ...item, title: todo }
+      if (todoState.modifyTodo && item.id === tempId) {
+        return { ...item, title: todoState.todo }
       }
       return item
     })
-    setTodoList(updatedTodoList)
-    setModifyTodo(null)
-    setTodo('')
+    setTodoState({
+      ...todoState,
+      todoList: updatedTodoList,
+      modifyTodo: null,
+      todo: '', //Clear the input
+    })
   }
 
-  //Deletion
-  const delTodo = (id: number) => {
-    const filterTodoList = todoList.filter((todo) => todo.id !== id)
-
-    setTodoList(filterTodoList)
+  //Function to delte a item
+  const delTodo = async (id: number) => {
+    const isAuthenticated = await handleAuthentication()
+    if (isAuthenticated) {
+      //Filter out the item with the id
+      const filterTodoList = todoState.todoList.filter((todo) => todo.id !== id)
+      setTodoState({ ...todoState, todoList: filterTodoList })
+    }
   }
 
-  const displayTodos = ({ item }: { item: TodoItem }) => {
-    return (
-      <TodoView>
-        <TodoText>{item?.title}</TodoText>
-
-        <Button title="edit" onPress={() => editTodo(item)} />
-        <Button title="delete" onPress={() => delTodo(item?.id)} />
-      </TodoView>
-    )
-  }
+  //Function to display itmes
+  const displayTodos = ({ item }: { item: TodoItem }) => (
+    <TodoView>
+      <TodoText>{item?.title}</TodoText>
+      <Button title="edit" onPress={() => editTodo(item)} />
+      <Button title="delete" onPress={() => delTodo(item?.id)} />
+    </TodoView>
+  )
 
   return (
     <Container>
       <TODOInput
-        placeholder="Type your comment11"
-        value={todo}
-        onChangeText={(input: string) => setTodo(input)}
+        placeholder="Type your comment"
+        value={todoState.todo}
+        onChangeText={(input: string) =>
+          setTodoState({ ...todoState, todo: input })
+        }
       />
-      {modifyTodo ? (
+      {todoState.modifyTodo ? (
         <TodoButton onPress={() => updateTodo()}>
           <TodoButtonText>SAVE</TodoButtonText>
         </TodoButton>
       ) : (
         <TodoButton onPress={() => addTodo()}>
-          <TodoButtonText>ADD1</TodoButtonText>
+          <TodoButtonText>ADD</TodoButtonText>
         </TodoButton>
       )}
-      <TODOFlat data={todoList} renderItem={displayTodos} />
+      <FlatList
+        data={todoState.todoList}
+        renderItem={displayTodos}
+        keyExtractor={(item) => item.id.toString()}
+      />
     </Container>
   )
 }

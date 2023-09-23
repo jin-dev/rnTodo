@@ -3,6 +3,18 @@
   "include": ["src", ".eslintrc.js", "App.tsx", "babel.config.ts"],
   "compilerOptions": {
     "strict": true,
-    "types": ["@types/styled-components-react-native"]
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "types": [
+      "@types/styled-components-react-native",
+      "jest"
+    ]
   }
 }
